@@ -1,0 +1,270 @@
+<Window x:Class="Gym.DashboardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Amural — Рабочий стол"
+        Icon="Assets/logo.png"
+        Height="900"
+        Width="1480"
+        MinHeight="820"
+        MinWidth="1320"
+        WindowStartupLocation="CenterOwner"
+        Background="#EEF5FF">
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,14" Padding="20" Background="White" BorderBrush="#C7DCF8" BorderThickness="1" CornerRadius="18">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Amural" FontSize="28" FontWeight="Bold" Foreground="#174A8B" />
+                    <TextBlock x:Name="HeaderHintText" Margin="0,6,0,0" Text="Выберите раздел слева и работайте с данными." Foreground="#456F9E" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                    <TextBlock x:Name="UserText" FontSize="16" FontWeight="SemiBold" Foreground="#174A8B" TextAlignment="Right" />
+                    <Button Margin="0,10,0,0" Padding="18,7" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Выход" Click="Logout_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Grid.Column="0" Margin="0,0,14,0" Padding="16" Background="White" BorderBrush="#C7DCF8" BorderThickness="1" CornerRadius="18">
+            <StackPanel>
+                <TextBlock Text="Разделы" FontSize="20" FontWeight="Bold" Foreground="#174A8B" />
+                <Button x:Name="MembersNavButton" Margin="0,16,0,10" Height="40" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Клиенты" Click="OpenMembers_Click" />
+                <Button x:Name="VisitsNavButton" Margin="0,0,0,10" Height="40" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Посещения" Click="OpenVisits_Click" />
+                <Button x:Name="SubscriptionsNavButton" Margin="0,0,0,10" Height="40" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Абонементы" Click="OpenSubscriptions_Click" />
+                <Button x:Name="UsersNavButton" Margin="0,0,0,10" Height="40" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Пользователи" Click="OpenUsers_Click" />
+                <Button x:Name="ReportsNavButton" Margin="0,0,0,10" Height="40" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Отчеты" Click="OpenReports_Click" />
+
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Grid.Column="1" Padding="16" Background="White" BorderBrush="#C7DCF8" BorderThickness="1" CornerRadius="18">
+            <Grid>
+                <Grid x:Name="MembersSection">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Клиенты" FontSize="24" FontWeight="Bold" Foreground="#174A8B" />
+                    <Grid Grid.Row="1" Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="300" />
+                        </Grid.ColumnDefinitions>
+                        <DataGrid x:Name="MembersGrid" Margin="0,0,14,0" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" SelectionChanged="MembersGrid_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Код" Binding="{Binding MemberId}" Width="55" />
+                                <DataGridTextColumn Header="Имя" Binding="{Binding FirstName}" Width="110" />
+                                <DataGridTextColumn Header="Фамилия" Binding="{Binding LastName}" Width="130" />
+                                <DataGridTextColumn Header="Дата рождения" Binding="{Binding BirthDate}" Width="115" />
+                                <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="140" />
+                                <DataGridTextColumn Header="Эл. почта" Binding="{Binding Email}" Width="*" />
+                                <DataGridTextColumn Header="Примечание" Binding="{Binding Notes}" Width="160" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Border Grid.Column="1" Padding="16" Background="#F8FBFF" BorderBrush="#D8E6FA" BorderThickness="1" CornerRadius="14">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="Редактирование клиента" FontSize="20" FontWeight="SemiBold" Foreground="#174A8B" />
+                                    <TextBlock Margin="0,8,0,0" Text="Выберите запись в таблице или заполните поля для нового клиента." Foreground="#456F9E" TextWrapping="Wrap" />
+
+                                    <TextBlock Margin="0,18,0,0" Text="Имя" Foreground="#174A8B" />
+                                    <TextBox x:Name="MemberFirstNameInput" Margin="0,8,0,0" Height="36" />
+
+                                    <TextBlock Margin="0,14,0,0" Text="Фамилия" Foreground="#174A8B" />
+                                    <TextBox x:Name="MemberLastNameInput" Margin="0,8,0,0" Height="36" />
+
+                                    <TextBlock Margin="0,14,0,0" Text="Дата рождения" Foreground="#174A8B" />
+                                    <DatePicker x:Name="MemberBirthDateInput" Margin="0,8,0,0" />
+
+                                    <TextBlock Margin="0,14,0,0" Text="Телефон" Foreground="#174A8B" />
+                                    <TextBox x:Name="MemberPhoneInput" Margin="0,8,0,0" Height="36" />
+
+                                    <TextBlock Margin="0,14,0,0" Text="Электронная почта" Foreground="#174A8B" />
+                                    <TextBox x:Name="MemberEmailInput" Margin="0,8,0,0" Height="36" />
+
+                                    <TextBlock Margin="0,14,0,0" Text="Примечание" Foreground="#174A8B" />
+                                    <TextBox x:Name="MemberNotesInput" Margin="0,8,0,0" Height="80" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" />
+
+                                    <Button x:Name="AddMemberButton" Margin="0,18,0,0" Height="38" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Добавить" Click="AddMember_Click" />
+                                    <Button x:Name="UpdateMemberButton" Margin="0,10,0,0" Height="38" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Сохранить" Click="UpdateMember_Click" />
+                                    <Button x:Name="DeleteMemberButton" Margin="0,10,0,0" Height="38" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Удалить" Click="DeleteMember_Click" />
+                                    <Button Margin="0,10,0,0" Height="38" Background="#DCEBFF" Foreground="#164A8A" BorderBrush="#A7C7F2" Content="Очистить" Click="ClearMember_Click" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <Grid x:Name="VisitsSection" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Посещения" FontSize="24" FontWeight="Bold" Foreground="#174A8B" />
+                    <Grid Grid.Row="1" Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="300" />
+                        </Grid.ColumnDefinitions>
+                        <DataGrid x:Name="VisitsGrid" Margin="0,0,14,0" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" SelectionChanged="VisitsGrid_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Код" Binding="{Binding VisitId}" Width="55" />
+                                <DataGridTextColumn Header="Клиент" Binding="{Binding MemberName}" Width="220" />
+                                <DataGridTextColumn Header="Дата посещения" Binding="{Binding VisitDate}" Width="120" />
+                                <DataGridTextColumn Header="Комментарий" Binding="{Binding Comment}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Border Grid.Column="1" Padding="16" Background="#F8FBFF" BorderBrush="#D8E6FA" BorderThickness="1" CornerRadius="14">
+                            <StackPanel>
+                                <TextBlock Text="Редактирование посещения" FontSize="20" FontWeight="SemiBold" Foreground="#174A8B" />
+                                <TextBlock Margin="0,8,0,0" Text="Посещение можно создать только для клиента с активным абонементом." Foreground="#456F9E" TextWrapping="Wrap" />
+
+                                <TextBlock Margin="0,18,0,0" Text="Клиент" Foreground="#174A8B" />
+                                <ComboBox x:Name="VisitMemberComboBox" Margin="0,8,0,0" Height="36" DisplayMemberPath="FullName" SelectedValuePath="MemberId" />
+
+                                <TextBlock Margin="0,14,0,0" Text="Дата посещения" Foreground="#174A8B" />
+                                <DatePicker x:Name="VisitDateInput" Margin="0,8,0,0" />
+
+                                <TextBlock Margin="0,14,0,0" Text="Комментарий" Foreground="#174A8B" />
+                                <TextBox x:Name="VisitCommentInput" Margin="0,8,0,0" Height="80" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" />
+
+                                <Button x:Name="AddVisitButton" Margin="0,18,0,0" Height="38" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Добавить" Click="AddVisit_Click" />
+                                <Button x:Name="UpdateVisitButton" Margin="0,10,0,0" Height="38" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Сохранить" Click="UpdateVisit_Click" />
+                                <Button x:Name="DeleteVisitButton" Margin="0,10,0,0" Height="38" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Удалить" Click="DeleteVisit_Click" />
+                                <Button Margin="0,10,0,0" Height="38" Background="#DCEBFF" Foreground="#164A8A" BorderBrush="#A7C7F2" Content="Очистить" Click="ClearVisit_Click" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <Grid x:Name="SubscriptionsSection" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Абонементы" FontSize="24" FontWeight="Bold" Foreground="#174A8B" />
+                    <Grid Grid.Row="1" Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="300" />
+                        </Grid.ColumnDefinitions>
+                        <DataGrid x:Name="SubscriptionsGrid" Margin="0,0,14,0" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" SelectionChanged="SubscriptionsGrid_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Код" Binding="{Binding SubscriptionId}" Width="55" />
+                                <DataGridTextColumn Header="Номер" Binding="{Binding SubscriptionNumber}" Width="70" />
+                                <DataGridTextColumn Header="Клиент" Binding="{Binding MemberName}" Width="*" />
+                                <DataGridTextColumn Header="Абонемент" Binding="{Binding PlanName}" Width="140" />
+                                <DataGridTextColumn Header="Начало" Binding="{Binding StartDate}" Width="105" />
+                                <DataGridTextColumn Header="Окончание" Binding="{Binding EndDate}" Width="105" />
+                                <DataGridTextColumn Header="Цена" Binding="{Binding Price}" Width="80" />
+                                <DataGridTextColumn Header="Активен" Binding="{Binding IsActiveText}" Width="75" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Border Grid.Column="1" Padding="16" Background="#F8FBFF" BorderBrush="#D8E6FA" BorderThickness="1" CornerRadius="14">
+                            <StackPanel>
+                                <TextBlock Text="Редактирование абонемента" FontSize="20" FontWeight="SemiBold" Foreground="#174A8B" />
+                                <TextBlock Margin="0,8,0,0" Text="Название абонемента задается только выбором из списка." Foreground="#456F9E" TextWrapping="Wrap" />
+
+                                <TextBlock Margin="0,18,0,0" Text="Клиент" Foreground="#174A8B" />
+                                <ComboBox x:Name="SubscriptionMemberComboBox" Margin="0,8,0,0" Height="36" DisplayMemberPath="FullName" SelectedValuePath="MemberId" />
+
+                                <TextBlock Margin="0,14,0,0" Text="Абонемент" Foreground="#174A8B" />
+                                <ComboBox x:Name="SubscriptionPlanComboBox" Margin="0,8,0,0" Height="36" />
+
+                                <TextBlock Margin="0,14,0,0" Text="Дата начала" Foreground="#174A8B" />
+                                <DatePicker x:Name="SubscriptionStartDateInput" Margin="0,8,0,0" />
+
+                                <TextBlock Margin="0,14,0,0" Text="Дата окончания" Foreground="#174A8B" />
+                                <DatePicker x:Name="SubscriptionEndDateInput" Margin="0,8,0,0" />
+
+                                <TextBlock Margin="0,14,0,0" Text="Стоимость" Foreground="#174A8B" />
+                                <TextBox x:Name="SubscriptionPriceInput" Margin="0,8,0,0" Height="36" Text="3000" />
+
+                                <CheckBox x:Name="SubscriptionIsActiveInput" Margin="0,16,0,0" Content="Активный абонемент" Foreground="#174A8B" IsChecked="True" />
+
+                                <Button x:Name="AddSubscriptionButton" Margin="0,18,0,0" Height="38" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Добавить" Click="AddSubscription_Click" />
+                                <Button x:Name="UpdateSubscriptionButton" Margin="0,10,0,0" Height="38" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Сохранить" Click="UpdateSubscription_Click" />
+                                <Button x:Name="DeleteSubscriptionButton" Margin="0,10,0,0" Height="38" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Удалить" Click="DeleteSubscription_Click" />
+                                <Button Margin="0,10,0,0" Height="38" Background="#DCEBFF" Foreground="#164A8A" BorderBrush="#A7C7F2" Content="Очистить" Click="ClearSubscription_Click" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <Grid x:Name="UsersSection" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Пользователи" FontSize="24" FontWeight="Bold" Foreground="#174A8B" />
+                    <Grid Grid.Row="1" Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="300" />
+                        </Grid.ColumnDefinitions>
+                        <DataGrid x:Name="UsersGrid" Margin="0,0,14,0" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" SelectionChanged="UsersGrid_SelectionChanged">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Код" Binding="{Binding UserId}" Width="55" />
+                                <DataGridTextColumn Header="Логин" Binding="{Binding Login}" Width="130" />
+                                <DataGridTextColumn Header="Роль" Binding="{Binding RoleText}" Width="120" />
+                                <DataGridTextColumn Header="Отображаемое имя" Binding="{Binding DisplayName}" Width="*" />
+                                <DataGridTextColumn Header="Связанный клиент" Binding="{Binding LinkedMember}" Width="200" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Border Grid.Column="1" Padding="16" Background="#F8FBFF" BorderBrush="#D8E6FA" BorderThickness="1" CornerRadius="14">
+                            <StackPanel>
+                                <TextBlock Text="Редактирование пользователя" FontSize="20" FontWeight="SemiBold" Foreground="#174A8B" />
+                                <TextBlock Margin="0,8,0,0" Text="Для клиента можно привязать только одну карточку клиента." Foreground="#456F9E" TextWrapping="Wrap" />
+
+                                <TextBlock Margin="0,18,0,0" Text="Логин" Foreground="#174A8B" />
+                                <TextBox x:Name="UserLoginInput" Margin="0,8,0,0" Height="36" />
+
+                                <TextBlock Margin="0,14,0,0" Text="Пароль" Foreground="#174A8B" />
+                                <TextBox x:Name="UserPasswordInput" Margin="0,8,0,0" Height="36" />
+
+                                <TextBlock Margin="0,14,0,0" Text="Отображаемое имя" Foreground="#174A8B" />
+                                <TextBox x:Name="UserDisplayNameInput" Margin="0,8,0,0" Height="36" />
+
+                                <TextBlock Margin="0,14,0,0" Text="Роль" Foreground="#174A8B" />
+                                <ComboBox x:Name="UserRoleComboBox" Margin="0,8,0,0" Height="36" SelectionChanged="UserRoleComboBox_SelectionChanged" />
+
+                                <TextBlock Margin="0,14,0,0" Text="Связанный клиент" Foreground="#174A8B" />
+                                <ComboBox x:Name="UserMemberComboBox" Margin="0,8,0,0" Height="36" DisplayMemberPath="FullName" SelectedValuePath="MemberId" />
+
+                                <Button x:Name="AddUserButton" Margin="0,18,0,0" Height="38" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Добавить" Click="AddUser_Click" />
+                                <Button x:Name="UpdateUserButton" Margin="0,10,0,0" Height="38" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Сохранить" Click="UpdateUser_Click" />
+                                <Button x:Name="DeleteUserButton" Margin="0,10,0,0" Height="38" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Удалить" Click="DeleteUser_Click" />
+                                <Button Margin="0,10,0,0" Height="38" Background="#DCEBFF" Foreground="#164A8A" BorderBrush="#A7C7F2" Content="Очистить" Click="ClearUser_Click" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <Grid x:Name="ReportsSection" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Отчеты" FontSize="24" FontWeight="Bold" Foreground="#174A8B" />
+                    <StackPanel Grid.Row="1" Margin="0,14,0,0" Orientation="Horizontal">
+                        <Button Width="240" Height="38" Margin="0,0,12,0" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Активные посещения за неделю" Click="LoadWeekReport_Click" />
+                        <Button Width="220" Height="38" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" Content="Рейтинг клиентов" Click="LoadTopReport_Click" />
+                    </StackPanel>
+                    <DataGrid x:Name="ReportsGrid" Grid.Row="2" Margin="0,16,0,0" AutoGenerateColumns="True" IsReadOnly="True" CanUserAddRows="False" />
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

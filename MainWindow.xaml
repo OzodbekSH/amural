@@ -1,0 +1,187 @@
+<Window x:Class="Gym.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Amural — Система учёта"
+        Icon="Assets/logo.png"
+        Height="820"
+        Width="480"
+        MinHeight="820"
+        MinWidth="480"
+        WindowStartupLocation="CenterScreen"
+        Background="#EEF5FF">
+    <Grid Margin="22">
+   
+
+        <Border Grid.Column="1" Padding="24" Background="White" BorderBrush="#C7DCF8" BorderThickness="1" CornerRadius="24">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Margin="0,0,0,20">
+                    <TextBlock Text="Amural" FontSize="28" FontWeight="Bold" Foreground="#164A8A" />
+                    <TextBlock Text="Система учёта фитнес-зала" FontSize="13" Foreground="#456F9E" Margin="0,4,0,0" />
+                </StackPanel>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="ShowLoginButton" Height="42" Margin="0,0,8,0" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" FontWeight="SemiBold" Content="Вход" Click="SwitchToLogin_Click" />
+                    <Button x:Name="ShowRegisterButton" Grid.Column="1" Height="42" Margin="8,0,0,0" Background="#DCEBFF" Foreground="#164A8A" BorderBrush="#A7C7F2" FontWeight="SemiBold" Content="Регистрация" Click="SwitchToRegister_Click" />
+                </Grid>
+
+                <Grid Grid.Row="2" Margin="0,18,0,0">
+                    <Border x:Name="LoginPanel" Background="Transparent">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="Авторизация" FontSize="28" FontWeight="Bold" Foreground="#164A8A" />
+                            <TextBlock Grid.Row="1" Margin="0,10,0,0" Text="Введите логин и пароль для входа в систему." Foreground="#456F9E" TextWrapping="Wrap" />
+
+                            <StackPanel Grid.Row="2" Margin="0,28,0,0">
+                                <TextBlock Text="Логин" Foreground="#164A8A" />
+                                <TextBox x:Name="LoginInput" Height="40" Margin="0,8,0,0" Padding="12,8" Background="#F8FBFF" BorderBrush="#A7C7F2" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="3" Margin="0,18,0,0">
+                                <TextBlock Text="Пароль" Foreground="#164A8A" />
+                                <PasswordBox x:Name="PasswordInput" Height="40" Margin="0,8,0,0" Padding="12,8" Background="#F8FBFF" BorderBrush="#A7C7F2" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="4" Margin="0,28,0,0">
+                                <Button Height="42" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" FontWeight="SemiBold" Content="Войти" Click="Login_Click" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border x:Name="RegisterPanel" Background="Transparent" Visibility="Collapsed">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="Регистрация клиента" FontSize="28" FontWeight="Bold" Foreground="#164A8A" />
+                                <TextBlock Grid.Row="1" Margin="0,10,0,0" Text="Создается клиент, активный абонемент и учетная запись клиента." Foreground="#456F9E" TextWrapping="Wrap" />
+
+                                <Grid Grid.Row="2" Margin="0,22,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="Имя" Foreground="#164A8A" />
+                                        <TextBox x:Name="RegisterFirstNameInput" Height="36" Margin="0,8,0,0" Padding="12,8" Background="#F8FBFF" BorderBrush="#A7C7F2" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                        <TextBlock Text="Фамилия" Foreground="#164A8A" />
+                                        <TextBox x:Name="RegisterLastNameInput" Height="36" Margin="0,8,0,0" Padding="12,8" Background="#F8FBFF" BorderBrush="#A7C7F2" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Grid.Row="3" Margin="0,16,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="Дата рождения" Foreground="#164A8A" />
+                                        <DatePicker x:Name="RegisterBirthDateInput" Margin="0,8,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                        <TextBlock Text="Телефон" Foreground="#164A8A" />
+                                        <TextBox x:Name="RegisterPhoneInput" Height="36" Margin="0,8,0,0" Padding="12,8" Background="#F8FBFF" BorderBrush="#A7C7F2" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Grid.Row="4" Margin="0,16,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="Электронная почта" Foreground="#164A8A" />
+                                        <TextBox x:Name="RegisterEmailInput" Height="36" Margin="0,8,0,0" Padding="12,8" Background="#F8FBFF" BorderBrush="#A7C7F2" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                        <TextBlock Text="Логин" Foreground="#164A8A" />
+                                        <TextBox x:Name="RegisterLoginInput" Height="36" Margin="0,8,0,0" Padding="12,8" Background="#F8FBFF" BorderBrush="#A7C7F2" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Grid.Row="5" Margin="0,16,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="Пароль" Foreground="#164A8A" />
+                                        <PasswordBox x:Name="RegisterPasswordInput" Height="36" Margin="0,8,0,0" Padding="12,8" Background="#F8FBFF" BorderBrush="#A7C7F2" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                        <TextBlock Text="Подтверждение пароля" Foreground="#164A8A" />
+                                        <PasswordBox x:Name="RegisterConfirmPasswordInput" Height="36" Margin="0,8,0,0" Padding="12,8" Background="#F8FBFF" BorderBrush="#A7C7F2" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Grid.Row="6" Margin="0,16,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.5*" />
+                                        <ColumnDefinition Width="0.75*" />
+                                        <ColumnDefinition Width="0.9*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,8,0">
+                                        <TextBlock Text="Абонемент" Foreground="#164A8A" />
+                                        <ComboBox x:Name="RegisterPlanComboBox" Height="36" Margin="0,8,0,0" Background="#F8FBFF" BorderBrush="#A7C7F2" SelectionChanged="RegisterPlan_Changed" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="8,0,8,0">
+                                        <TextBlock Text="Месяцев" Foreground="#164A8A" />
+                                        <TextBox x:Name="RegisterMonthsInput" Height="36" Margin="0,8,0,0" Padding="12,8" Text="1" Background="#F8FBFF" BorderBrush="#A7C7F2" TextChanged="RegisterMonths_Changed" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Margin="8,0,0,0">
+                                        <TextBlock Text="Цена" Foreground="#164A8A" />
+                                        <TextBox x:Name="RegisterPriceInput" Height="36" Margin="0,8,0,0" Padding="12,8" IsReadOnly="True" Background="#EEF5FF" BorderBrush="#A7C7F2" Foreground="#456F9E" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <StackPanel Grid.Row="7" Margin="0,16,0,0">
+                                    <TextBlock Text="Примечание" Foreground="#164A8A" />
+                                    <TextBox x:Name="RegisterNotesInput" Height="72" Margin="0,8,0,0" Padding="12,10" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Background="#F8FBFF" BorderBrush="#A7C7F2" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="8" Margin="0,24,0,0">
+                                    <Button Height="42" Background="#2F74C0" Foreground="White" BorderBrush="#2F74C0" FontWeight="SemiBold" Content="Зарегистрироваться" Click="Register_Click" />
+                                </StackPanel>
+                            </Grid>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+
+                <TextBlock x:Name="StatusText" Grid.Row="3" Margin="0,18,0,0" Foreground="#456F9E" TextWrapping="Wrap" />
+                <StackPanel Grid.Row="4" Margin="0,10,0,0">
+                    <TextBlock Text="Разработчик: Ширанов Озодбек  •  ИСИП-23-1п" FontSize="11" Foreground="#A0B8D8" HorizontalAlignment="Right" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
