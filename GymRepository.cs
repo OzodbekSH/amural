@@ -1,17 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 
 namespace Gym
 {
-    public class GymRepository
+    public class GymRepository : IDisposable
     {
-        // ── Хранилище ────────────────────────────────────────────────────────
-
-        private readonly List<Member>       _members       = new List<Member>();
-        private readonly List<Subscription> _subscriptions = new List<Subscription>();
-        private readonly List<Visit>        _visits        = new List<Visit>();
-        private readonly List<UserAccount>  _users         = new List<UserAccount>();
+        private readonly GymDbContext _db = new GymDbContext();
 
         private readonly List<string> _planCatalog = new List<string>
         {
@@ -27,16 +23,12 @@ namespace Gym
             { "Бассейн",       2600m }
         };
 
-        private int _memberId = 1, _subscriptionId = 1, _visitId = 1, _userId = 1;
-
-        public GymRepository() { Seed(); }
-
         // ── Свойства ─────────────────────────────────────────────────────────
 
-        public IReadOnlyList<Member>                Members       { get { return _members; } }
-        public IReadOnlyList<Subscription>          Subscriptions { get { return _subscriptions; } }
-        public IReadOnlyList<Visit>                 Visits        { get { return _visits; } }
-        public IReadOnlyList<UserAccount>           Users         { get { return _users; } }
+        public IReadOnlyList<Member>                Members       { get { return _db.Members.OrderBy(m => m.LastName).ThenBy(m => m.FirstName).ToList(); } }
+        public IReadOnlyList<Subscription>          Subscriptions { get { return _db.Subscriptions.OrderByDescending(s => s.IsActive).ThenBy(s => s.EndDate).ToList(); } }
+        public IReadOnlyList<Visit>                 Visits        { get { return _db.Visits.OrderByDescending(v => v.VisitDate).ToList(); } }
+        public IReadOnlyList<UserAccount>           Users         { get { return _db.Users.OrderBy(u => u.RoleString).ThenBy(u => u.DisplayName).ToList(); } }
         public IReadOnlyList<string>                PlanCatalog   { get { return _planCatalog; } }
         public IReadOnlyDictionary<string, decimal> PlanPrices    { get { return _planPrices; } }
 
@@ -44,9 +36,7 @@ namespace Gym
 
         public UserAccount Authenticate(string login, string password)
         {
-            return _users.FirstOrDefault(u =>
-                string.Equals(u.Login, login, StringComparison.OrdinalIgnoreCase) &&
-                u.Password == password);
+            return _db.Users.FirstOrDefault(u => u.Login == login && u.Password == password);
         }
 
         public UserAccount RegisterClientAccount(
@@ -61,23 +51,28 @@ namespace Gym
                 throw new InvalidOperationException("Введите пароль.");
             if (password.Trim().Length < 4)
                 throw new InvalidOperationException("Пароль должен содержать минимум 4 символа.");
-            if (_users.Any(u => string.Equals(u.Login, login.Trim(), StringComparison.OrdinalIgnoreCase)))
+            if (_db.Users.Any(u => u.Login == login.Trim()))
                 throw new InvalidOperationException("Пользователь с таким логином уже существует.");
 
-            Member member = null;
-            try
+            using (var tx = _db.Database.BeginTransaction())
             {
-                member = AddMemberWithSubscription(
-                    firstName, lastName, birthDate, phone, email, notes,
-                    planName, DateTime.Today, durationMonths, price);
+                try
+                {
+                    var member = AddMemberWithSubscription(
+                        firstName, lastName, birthDate, phone, email, notes,
+                        planName, DateTime.Today, durationMonths, price);
 
-                return AddUser(login, password, UserRole.Client,
-                    firstName.Trim() + " " + lastName.Trim(), member.MemberId);
-            }
-            catch
-            {
-                if (member != null) DeleteMember(member.MemberId);
-                throw;
+                    var user = AddUser(login, password, UserRole.Client,
+                        firstName.Trim() + " " + lastName.Trim(), member.MemberId);
+
+                    tx.Commit();
+                    return user;
+                }
+                catch
+                {
+                    tx.Rollback();
+                    throw;
+                }
             }
         }
 
@@ -102,7 +97,6 @@ namespace Gym
             ValidateMemberFields(firstName, lastName, phone);
             var member = new Member
             {
-                MemberId  = _memberId++,
                 FirstName = firstName.Trim(),
                 LastName  = lastName.Trim(),
                 BirthDate = birthDate.Date,
@@ -110,7 +104,8 @@ namespace Gym
                 Email     = (email  ?? string.Empty).Trim(),
                 Notes     = (notes  ?? string.Empty).Trim()
             };
-            _members.Add(member);
+            _db.Members.Add(member);
+            _db.SaveChanges();
             return member;
         }
 
@@ -125,22 +120,24 @@ namespace Gym
             m.Phone     = phone.Trim();
             m.Email     = (email  ?? string.Empty).Trim();
             m.Notes     = (notes  ?? string.Empty).Trim();
+            _db.SaveChanges();
         }
 
         public void DeleteMember(int memberId)
         {
             var member = GetMember(memberId);
-            _visits.RemoveAll(v => v.MemberId == memberId);
-            _subscriptions.RemoveAll(s => s.MemberId == memberId);
-            _users.RemoveAll(u => u.MemberId == memberId && u.Role == UserRole.Client);
-            _members.Remove(member);
+            _db.Visits.RemoveRange(_db.Visits.Where(v => v.MemberId == memberId));
+            _db.Subscriptions.RemoveRange(_db.Subscriptions.Where(s => s.MemberId == memberId));
+            _db.Users.RemoveRange(_db.Users.Where(u => u.MemberId == memberId && u.RoleString == UserRole.Client.ToString()));
+            _db.Members.Remove(member);
+            _db.SaveChanges();
         }
 
         public List<Member> GetVisibleMembers(UserAccount user)
         {
             if (user?.Role == UserRole.Client && user.MemberId.HasValue)
-                return _members.Where(m => m.MemberId == user.MemberId.Value).ToList();
-            return _members.OrderBy(m => m.LastName).ThenBy(m => m.FirstName).ToList();
+                return _db.Members.Where(m => m.MemberId == user.MemberId.Value).ToList();
+            return _db.Members.OrderBy(m => m.LastName).ThenBy(m => m.FirstName).ToList();
         }
 
         // ── Абонементы ───────────────────────────────────────────────────────
@@ -159,7 +156,6 @@ namespace Gym
 
             var sub = new Subscription
             {
-                SubscriptionId     = _subscriptionId++,
                 SubscriptionNumber = GetNextSubscriptionNumber(),
                 MemberId  = memberId,
                 PlanName  = planName.Trim(),
@@ -168,7 +164,8 @@ namespace Gym
                 Price     = price,
                 IsActive  = isActive
             };
-            _subscriptions.Add(sub);
+            _db.Subscriptions.Add(sub);
+            _db.SaveChanges();
             return sub;
         }
 
@@ -177,16 +174,16 @@ namespace Gym
         {
             GetMember(memberId);
             ValidatePlanName(planName);
-            var sub = _subscriptions.FirstOrDefault(s => s.SubscriptionId == subscriptionId);
+            var sub = _db.Subscriptions.FirstOrDefault(s => s.SubscriptionId == subscriptionId);
             if (sub == null)
                 throw new InvalidOperationException("Абонемент не найден.");
             if (endDate.Date <= startDate.Date)
                 throw new InvalidOperationException("Дата окончания должна быть позже даты начала.");
             if (price < 0)
                 throw new InvalidOperationException("Стоимость не может быть отрицательной.");
-            if (isActive && _subscriptions.Any(s =>
+            if (isActive && _db.Subscriptions.Any(s =>
                 s.SubscriptionId != subscriptionId && s.MemberId == memberId &&
-                s.IsActive && s.StartDate.Date <= startDate.Date && s.EndDate.Date >= startDate.Date))
+                s.IsActive && s.StartDate <= startDate.Date && s.EndDate >= startDate.Date))
                 throw new InvalidOperationException("У клиента уже есть активный абонемент.");
 
             sub.MemberId  = memberId;
@@ -195,17 +192,22 @@ namespace Gym
             sub.EndDate   = endDate.Date;
             sub.Price     = price;
             sub.IsActive  = isActive;
+            _db.SaveChanges();
         }
 
         public void DeleteSubscription(int subscriptionId)
         {
-            var sub = _subscriptions.FirstOrDefault(s => s.SubscriptionId == subscriptionId);
-            if (sub != null) _subscriptions.Remove(sub);
+            var sub = _db.Subscriptions.Find(subscriptionId);
+            if (sub != null)
+            {
+                _db.Subscriptions.Remove(sub);
+                _db.SaveChanges();
+            }
         }
 
         public List<Subscription> GetVisibleSubscriptions(UserAccount user)
         {
-            var query = _subscriptions.AsEnumerable();
+            IQueryable<Subscription> query = _db.Subscriptions;
             if (user?.Role == UserRole.Client && user.MemberId.HasValue)
                 query = query.Where(s => s.MemberId == user.MemberId.Value);
             return query.OrderByDescending(s => s.IsActive).ThenBy(s => s.EndDate).ToList();
@@ -218,46 +220,50 @@ namespace Gym
             GetMember(memberId);
             if (!HasActiveSubscription(memberId, visitDate))
                 throw new InvalidOperationException("Нельзя зарегистрировать посещение без активного абонемента.");
-            if (_visits.Any(v => v.MemberId == memberId && v.VisitDate.Date == visitDate.Date))
+            if (_db.Visits.Any(v => v.MemberId == memberId && v.VisitDate == visitDate.Date))
                 throw new InvalidOperationException("Посещение уже зарегистрировано на эту дату.");
 
-            var visit = new Visit
-            {
-                VisitId            = _visitId++,
-                MemberId           = memberId,
-                VisitDate          = visitDate.Date,
-                RegisteredByUserId = registeredByUserId,
-                Comment            = (comment ?? string.Empty).Trim()
-            };
-            _visits.Add(visit);
-            return visit;
+            // Use raw SQL to bypass EF's OUTPUT INSERTED issue with the INSTEAD OF INSERT trigger
+            _db.Database.ExecuteSqlCommand(
+                "INSERT INTO Visits (MemberId, VisitDate, RegisteredByUserId, Comment) VALUES (@p0, @p1, @p2, @p3)",
+                memberId, visitDate.Date, registeredByUserId, (object)(comment?.Trim() ?? "") ?? DBNull.Value);
+
+            return _db.Visits
+                .Where(v => v.MemberId == memberId && v.VisitDate == visitDate.Date)
+                .OrderByDescending(v => v.VisitId)
+                .First();
         }
 
         public void UpdateVisit(int visitId, int memberId, DateTime visitDate, string comment)
         {
             GetMember(memberId);
-            var visit = _visits.FirstOrDefault(v => v.VisitId == visitId);
+            var visit = _db.Visits.Find(visitId);
             if (visit == null)
                 throw new InvalidOperationException("Посещение не найдено.");
             if (!HasActiveSubscription(memberId, visitDate))
                 throw new InvalidOperationException("Нельзя зарегистрировать посещение без активного абонемента.");
-            if (_visits.Any(v => v.VisitId != visitId && v.MemberId == memberId && v.VisitDate.Date == visitDate.Date))
+            if (_db.Visits.Any(v => v.VisitId != visitId && v.MemberId == memberId && v.VisitDate == visitDate.Date))
                 throw new InvalidOperationException("Посещение уже зарегистрировано на эту дату.");
 
             visit.MemberId  = memberId;
             visit.VisitDate = visitDate.Date;
             visit.Comment   = (comment ?? string.Empty).Trim();
+            _db.SaveChanges();
         }
 
         public void DeleteVisit(int visitId)
         {
-            var visit = _visits.FirstOrDefault(v => v.VisitId == visitId);
-            if (visit != null) _visits.Remove(visit);
+            var visit = _db.Visits.Find(visitId);
+            if (visit != null)
+            {
+                _db.Visits.Remove(visit);
+                _db.SaveChanges();
+            }
         }
 
         public List<Visit> GetVisibleVisits(UserAccount user)
         {
-            var query = _visits.AsEnumerable();
+            IQueryable<Visit> query = _db.Visits;
             if (user?.Role == UserRole.Client && user.MemberId.HasValue)
                 query = query.Where(v => v.MemberId == user.MemberId.Value);
             return query.OrderByDescending(v => v.VisitDate).ToList();
@@ -270,47 +276,46 @@ namespace Gym
         {
             if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(password))
                 throw new InvalidOperationException("Логин и пароль обязательны.");
-            if (_users.Any(u => string.Equals(u.Login, login.Trim(), StringComparison.OrdinalIgnoreCase)))
+            if (_db.Users.Any(u => u.Login == login.Trim()))
                 throw new InvalidOperationException("Пользователь с таким логином уже существует.");
             if (role == UserRole.Client)
             {
                 if (!memberId.HasValue)
                     throw new InvalidOperationException("Для клиента необходимо выбрать карточку клиента.");
                 GetMember(memberId.Value);
-                if (_users.Any(u => u.Role == UserRole.Client && u.MemberId == memberId.Value))
+                if (_db.Users.Any(u => u.RoleString == UserRole.Client.ToString() && u.MemberId == memberId.Value))
                     throw new InvalidOperationException("Для этого клиента уже создан пользователь.");
             }
 
             var user = new UserAccount
             {
-                UserId      = _userId++,
                 Login       = login.Trim(),
                 Password    = password,
                 Role        = role,
                 DisplayName = string.IsNullOrWhiteSpace(displayName) ? login.Trim() : displayName.Trim(),
                 MemberId    = memberId
             };
-            _users.Add(user);
+            _db.Users.Add(user);
+            _db.SaveChanges();
             return user;
         }
 
         public void UpdateUser(int userId, string login, string password, UserRole role,
             string displayName, int? memberId)
         {
-            var user = _users.FirstOrDefault(u => u.UserId == userId);
+            var user = _db.Users.Find(userId);
             if (user == null)
                 throw new InvalidOperationException("Пользователь не найден.");
             if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(password))
                 throw new InvalidOperationException("Логин и пароль обязательны.");
-            if (_users.Any(u => u.UserId != userId &&
-                string.Equals(u.Login, login.Trim(), StringComparison.OrdinalIgnoreCase)))
+            if (_db.Users.Any(u => u.UserId != userId && u.Login == login.Trim()))
                 throw new InvalidOperationException("Пользователь с таким логином уже существует.");
             if (role == UserRole.Client)
             {
                 if (!memberId.HasValue)
                     throw new InvalidOperationException("Для клиента необходимо выбрать карточку клиента.");
                 GetMember(memberId.Value);
-                if (_users.Any(u => u.UserId != userId && u.Role == UserRole.Client && u.MemberId == memberId.Value))
+                if (_db.Users.Any(u => u.UserId != userId && u.RoleString == UserRole.Client.ToString() && u.MemberId == memberId.Value))
                     throw new InvalidOperationException("Для этого клиента уже создан пользователь.");
             }
 
@@ -319,53 +324,48 @@ namespace Gym
             user.Role        = role;
             user.DisplayName = string.IsNullOrWhiteSpace(displayName) ? login.Trim() : displayName.Trim();
             user.MemberId    = role == UserRole.Client ? memberId : null;
+            _db.SaveChanges();
         }
 
         public void DeleteUser(int userId)
         {
-            var user = _users.FirstOrDefault(u => u.UserId == userId);
-            if (user != null) _users.Remove(user);
+            var user = _db.Users.Find(userId);
+            if (user != null)
+            {
+                _db.Users.Remove(user);
+                _db.SaveChanges();
+            }
         }
 
         public List<UserAccount> GetVisibleUsers(UserAccount current)
         {
             if (current?.Role == UserRole.Client)
-                return _users.Where(u => u.UserId == current.UserId).ToList();
+                return _db.Users.Where(u => u.UserId == current.UserId).ToList();
             if (current?.Role == UserRole.Trainer)
-                return _users.Where(u => u.Role != UserRole.Administrator).ToList();
-            return _users.OrderBy(u => u.Role).ThenBy(u => u.DisplayName).ToList();
+                return _db.Users.Where(u => u.RoleString != UserRole.Administrator.ToString()).ToList();
+            return _db.Users.OrderBy(u => u.RoleString).ThenBy(u => u.DisplayName).ToList();
         }
 
         // ── Отчёты ───────────────────────────────────────────────────────────
 
         public List<WeeklyVisitReportItem> GetActiveVisitsForWeek()
         {
-            var start = DateTime.Today.AddDays(-6);
-            return _visits
-                .Where(v => v.VisitDate.Date >= start && v.VisitDate.Date <= DateTime.Today)
-                .Where(v => HasActiveSubscription(v.MemberId, v.VisitDate))
-                .OrderByDescending(v => v.VisitDate)
-                .Select(v => new WeeklyVisitReportItem
-                {
-                    VisitDate        = v.VisitDate,
-                    MemberName       = GetMemberName(v.MemberId),
-                    SubscriptionPlan = GetPlanForDate(v.MemberId, v.VisitDate)
-                })
-                .ToList();
+            return _db.Database.SqlQuery<WeeklyVisitReportItem>(
+                "SELECT VisitDate, MemberName, PlanName AS SubscriptionPlan " +
+                "FROM ActiveVisitsLastWeek " +
+                "ORDER BY VisitDate DESC"
+            ).ToList();
         }
 
         public List<TopVisitorReportItem> GetTopVisitors()
         {
-            return _visits
-                .GroupBy(v => v.MemberId)
-                .Select(g => new TopVisitorReportItem
-                {
-                    MemberName  = GetMemberName(g.Key),
-                    VisitsCount = g.Count()
-                })
-                .OrderByDescending(x => x.VisitsCount)
-                .ThenBy(x => x.MemberName)
-                .ToList();
+            return _db.Database.SqlQuery<TopVisitorReportItem>(
+                "SELECT m.LastName + N' ' + m.FirstName AS MemberName, COUNT(v.VisitId) AS VisitsCount " +
+                "FROM Visits v " +
+                "JOIN Members m ON m.MemberId = v.MemberId " +
+                "GROUP BY m.MemberId, m.LastName, m.FirstName " +
+                "ORDER BY VisitsCount DESC, MemberName"
+            ).ToList();
         }
 
         // ── Вспомогательные ──────────────────────────────────────────────────
@@ -374,16 +374,17 @@ namespace Gym
 
         public bool HasActiveSubscription(int memberId, DateTime onDate)
         {
-            return _subscriptions.Any(s =>
+            var date = onDate.Date;
+            return _db.Subscriptions.Any(s =>
                 s.MemberId == memberId && s.IsActive &&
-                s.StartDate.Date <= onDate.Date && s.EndDate.Date >= onDate.Date);
+                s.StartDate <= date && s.EndDate >= date);
         }
 
         private string GetPlanForDate(int memberId, DateTime onDate)
         {
-            var sub = _subscriptions
-                .Where(s => s.MemberId == memberId &&
-                            s.StartDate.Date <= onDate.Date && s.EndDate.Date >= onDate.Date)
+            var date = onDate.Date;
+            var sub = _db.Subscriptions
+                .Where(s => s.MemberId == memberId && s.StartDate <= date && s.EndDate >= date)
                 .OrderByDescending(s => s.IsActive).ThenByDescending(s => s.EndDate)
                 .FirstOrDefault();
             return sub == null ? "Нет абонемента" : sub.PlanName;
@@ -391,15 +392,16 @@ namespace Gym
 
         private Member GetMember(int memberId)
         {
-            var m = _members.FirstOrDefault(x => x.MemberId == memberId);
+            var m = _db.Members.Find(memberId);
             if (m == null) throw new InvalidOperationException("Клиент не найден.");
             return m;
         }
 
         private int GetNextSubscriptionNumber()
         {
+            var used = new HashSet<int>(_db.Subscriptions.Select(s => s.SubscriptionNumber));
             for (var n = 100; n <= 9999; n++)
-                if (_subscriptions.All(s => s.SubscriptionNumber != n)) return n;
+                if (!used.Contains(n)) return n;
             throw new InvalidOperationException("Свободные номера абонементов закончились.");
         }
 
@@ -417,59 +419,6 @@ namespace Gym
                 throw new InvalidOperationException("Выберите абонемент из списка.");
         }
 
-        // ── Начальные данные ──────────────────────────────────────────────────
-
-        private void Seed()
-        {
-            var today = DateTime.Today;
-
-            _members.AddRange(new[]
-            {
-                new Member { MemberId = _memberId++, FirstName = "Иван",   LastName = "Петров",   BirthDate = new DateTime(1996,  4, 12), Phone = "+7 914 000-10-01", Email = "ivan.petrov@gym.local",    Notes = "Утренние тренировки" },
-                new Member { MemberId = _memberId++, FirstName = "Анна",   LastName = "Соколова", BirthDate = new DateTime(1999,  7,  3), Phone = "+7 914 000-10-02", Email = "anna.sokolova@gym.local",  Notes = "Предпочитает йогу"   },
-                new Member { MemberId = _memberId++, FirstName = "Максим", LastName = "Орлов",    BirthDate = new DateTime(1991,  1, 25), Phone = "+7 914 000-10-03", Email = "maksim.orlov@gym.local",   Notes = "Силовая зона"        },
-                new Member { MemberId = _memberId++, FirstName = "Елена",  LastName = "Морозова", BirthDate = new DateTime(1988,  9, 19), Phone = "+7 914 000-10-04", Email = "elena.morozova@gym.local", Notes = "Бассейн и кардио"    },
-                new Member { MemberId = _memberId++, FirstName = "Кирилл", LastName = "Волков",   BirthDate = new DateTime(2000, 12,  7), Phone = "+7 914 000-10-05", Email = "kirill.volkov@gym.local",  Notes = "Ожидает продление"   }
-            });
-
-            _subscriptions.AddRange(new[]
-            {
-                new Subscription { SubscriptionId = _subscriptionId++, SubscriptionNumber = 100, MemberId = 1, PlanName = "Силовой",       StartDate = today.AddDays(-20), EndDate = today.AddDays( 10), Price = 3200m, IsActive = true  },
-                new Subscription { SubscriptionId = _subscriptionId++, SubscriptionNumber = 101, MemberId = 2, PlanName = "Йога",          StartDate = today.AddDays(-12), EndDate = today.AddDays( 18), Price = 2900m, IsActive = true  },
-                new Subscription { SubscriptionId = _subscriptionId++, SubscriptionNumber = 102, MemberId = 3, PlanName = "Полный доступ", StartDate = today.AddDays( -5), EndDate = today.AddDays( 25), Price = 4100m, IsActive = true  },
-                new Subscription { SubscriptionId = _subscriptionId++, SubscriptionNumber = 103, MemberId = 4, PlanName = "Бассейн",       StartDate = today.AddDays(-40), EndDate = today.AddDays( -2), Price = 2600m, IsActive = false }
-            });
-
-            _users.AddRange(new[]
-            {
-                new UserAccount { UserId = _userId++, Login = "admin", Password = "admin123", Role = UserRole.Administrator, DisplayName = "Администратор зала", MemberId = null },
-                new UserAccount { UserId = _userId++, Login = "coach", Password = "coach123", Role = UserRole.Trainer,       DisplayName = "Старший тренер",     MemberId = null },
-                new UserAccount { UserId = _userId++, Login = "anna",  Password = "anna123",  Role = UserRole.Client,        DisplayName = "Анна Соколова",      MemberId = 2    }
-            });
-
-            SeedVisit(1, today.AddDays(-9), "Кардио");        SeedVisit(2, today.AddDays(-9), "Растяжка");
-            SeedVisit(3, today.AddDays(-9), "Ноги");           SeedVisit(1, today.AddDays(-8), "Спина");
-            SeedVisit(2, today.AddDays(-8), "Йога");           SeedVisit(3, today.AddDays(-8), "Грудь");
-            SeedVisit(1, today.AddDays(-7), "Функциональная"); SeedVisit(2, today.AddDays(-7), "Пилатес");
-            SeedVisit(4, today.AddDays(-7), "Последний активный день");
-            SeedVisit(1, today.AddDays(-6), "Интервальная");   SeedVisit(2, today.AddDays(-6), "Дыхательная практика");
-            SeedVisit(3, today.AddDays(-6), "Кроссфит");       SeedVisit(1, today.AddDays(-5), "Бокс");
-            SeedVisit(2, today.AddDays(-5), "Гибкость");       SeedVisit(3, today.AddDays(-4), "Силовая");
-            SeedVisit(1, today.AddDays(-3), "Кор");            SeedVisit(2, today.AddDays(-3), "Баланс");
-            SeedVisit(3, today.AddDays(-2), "Руки");           SeedVisit(1, today.AddDays(-1), "Спринт");
-            SeedVisit(2, today,             "Восстановление");
-        }
-
-        private void SeedVisit(int memberId, DateTime date, string comment)
-        {
-            _visits.Add(new Visit
-            {
-                VisitId            = _visitId++,
-                MemberId           = memberId,
-                VisitDate          = date.Date,
-                RegisteredByUserId = 2,
-                Comment            = comment
-            });
-        }
+        public void Dispose() { _db?.Dispose(); }
     }
 }
