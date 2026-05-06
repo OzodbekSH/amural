@@ -1,7 +1,7 @@
-CREATE DATABASE GymClub;
+CREATE DATABASE Amural;
 GO
 
-USE GymClub;
+USE Amural;
 GO
 
 CREATE TABLE Members (
